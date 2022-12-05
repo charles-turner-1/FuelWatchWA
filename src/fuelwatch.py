@@ -32,6 +32,9 @@ class FuelPrice():
             self.payload["Brand"] = self.brand[brand]
         if product is not None:
             self.payload["Product"] = self.product[product]
+            self.fuel_name = product
+        else:
+            self.fuel_name = "Unleaded Petrol"
         if region is not None:
             self.payload["Region"] = self.region[region]
         if suburb is not None:
@@ -43,8 +46,12 @@ class FuelPrice():
         self.response = requests.get(self.base_URL,params=self.payload
                                     ,headers={'user-agent' : ''})
 
-        self.feed = feedparser.parse(self.response.content['entries'])
+        self.feed = feedparser.parse(self.response.content)['entries']
 
+    def print_all(self):
+        for feed_val in self.feed:
+            print(f"{feed_val['brand']} sells {self.fuel_name} for {feed_val['price']} at {feed_val['address']}")
+    
 
         
 
