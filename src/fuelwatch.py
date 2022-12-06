@@ -9,6 +9,7 @@ import json
 import os 
 import shutil
 import feedparser
+import pandas
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -47,6 +48,8 @@ class FuelPrice():
                                     ,headers={'user-agent' : ''})
 
         self.feed = feedparser.parse(self.response.content)['entries']
+
+        self.data_fields = self.feed[0].keys()
 
     def print_all(self):
         for feed_val in self.feed:
