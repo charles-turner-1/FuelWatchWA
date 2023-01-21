@@ -51,26 +51,28 @@ class Window(QWidget):
  
     def submit(self):
         # Need to set defaults properly
-        region_val = self.fuel.region[self.region_selector.currentText()]
-        self.remove_any()
+        region_val = (self.fuel.region[self.region_selector.currentText()] 
+                     if self.region_selector.currentText() != "Any" 
+                     else None)
+        product_val = (self.fuel.product[self.product_selector.currentText()]
+                      if self.product_selector.currentText() != "Any"
+                      else None)
+        suburb_val = (self.suburb_selector.currentText() 
+                     if self.suburb_selector.currentText() != "Any" 
+                     else None)
+        brand_val = (self.fuel.brand[self.brand_selector.currentText()] 
+                    if self.brand_selector.currentText() != "Any" 
+                    else None)  
+
+        #self.remove_any()
+
+        self.fuel.set_surrounding(surrounding=self.inc_surround()) 
         self.fuel.set_region(region=region_val)
-
-        product_val = self.fuel.product[self.product_selector.currentText()]
-        self.remove_any()
         self.fuel.set_product(product=product_val)
-
-        suburb_val = self.suburb_selector.currentText()
-        self.remove_any()
-
         self.fuel.set_suburb(suburb=suburb_val)
-        brand_val = self.fuel.brand[self.brand_selector.currentText()]
-        self.remove_any()
-
         self.fuel.set_brand(brand=brand_val)    
-        self.remove_any()
-        self.fuel.set_surrounding(surrounding=self.inc_surround())
 
-        print([(key,val) for key,val in self.fuel.payload.items()])
+
         self.fuel.request()
         self.fuel.print_all()
         

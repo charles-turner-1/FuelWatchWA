@@ -52,8 +52,7 @@ class FuelPrice():
         self.response = requests.get(self.base_URL,params=self.payload
                                     ,headers={'user-agent' : ''})
         self.feed = feedparser.parse(self.response.content)['entries']
-        self.data_fields = self.feed[0].keys()
-
+        #self.data_fields = self.feed[0].keys()
 
     def print_all(self):
         for feed_val in self.feed:
@@ -75,10 +74,10 @@ class FuelPrice():
         self.payload["Brand"] = brand
     
     def set_suburb(self,suburb):
-        self.payload["Suburb"] = suburb
+        self.payload["Suburb"] = suburb 
 
     def set_region(self,region):
-        self.payload["Region"] = region
+        self.payload["Region"] = region 
 
     def set_product(self,product):
         self.payload["Product"] = product
