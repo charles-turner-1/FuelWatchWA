@@ -1,9 +1,9 @@
 from fuelwatch import FuelPrice
 
 
-from PyQt6.QtWidgets import  QApplication, QWidget, QLabel, QComboBox, QPushButton, QCheckBox
+from PyQt6.QtWidgets import  QApplication, QWidget, QLabel, QComboBox, QPushButton, QCheckBox, QFrame
 import sys
- 
+
 class Window(QWidget):
     def __init__(self):
         super().__init__()
@@ -18,6 +18,20 @@ class Window(QWidget):
         for brand in self.fuel.get_brands():
             self.brand_selector.addItem(brand)
         self.brand_selector.move(100,100+ 0* interval)
+
+        self.fuel_label = QLabel(self)
+        self.fuel_label.setText("Fuel")
+        #self.fuel_label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+
+        self.brand_label = QLabel(self)
+        self.fuel_label.setText("Brand")
+        self.suburb_label = QLabel(self)
+        self.fuel_label.setText("Suburb")
+        self.region_label = QLabel(self)
+        self.fuel_label.setText("Region")
+
+
+
  
         self.product_selector = QComboBox(self)
         self.product_selector.addItem("Any")
@@ -64,7 +78,6 @@ class Window(QWidget):
                     if self.brand_selector.currentText() != "Any" 
                     else None)  
 
-        #self.remove_any()
 
         self.fuel.set_surrounding(surrounding=self.inc_surround()) 
         self.fuel.set_region(region=region_val)
@@ -76,12 +89,6 @@ class Window(QWidget):
         self.fuel.request()
         self.fuel.print_all()
         
-    def remove_any(self):
-        """ Remove any items from self.fuel where self.fuel.key == "Any" """
-        new_dict = self.fuel.payload.copy()
-        for key, val in new_dict.items():
-            if val == "Any":
-                self.fuel.payload.pop(key)
 
     def inc_surround(self):
         print("Selected: ", self.surrounding.isChecked())

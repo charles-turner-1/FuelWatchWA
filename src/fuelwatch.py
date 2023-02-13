@@ -10,6 +10,7 @@ import os
 import shutil
 import feedparser
 import pandas
+import geocoder
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -46,13 +47,11 @@ class FuelPrice():
         self.payload["Surrounding"] = "yes" if surrounding is True else "no"
 
         self.request()
-
     
     def request(self):
         self.response = requests.get(self.base_URL,params=self.payload
                                     ,headers={'user-agent' : ''})
         self.feed = feedparser.parse(self.response.content)['entries']
-        #self.data_fields = self.feed[0].keys()
 
     def print_all(self):
         for feed_val in self.feed:
@@ -84,3 +83,48 @@ class FuelPrice():
 
     def set_surrounding(self,surrounding):
         self.payload["Surrounding"] = "yes" if surrounding is True else "no"
+
+class CarInfo():
+    """
+    This class contains info about your car / ute ie. mileage, tank size, fuel 
+    type.
+    """
+    def __init__(self,tank_size = 50
+                     ,mileage = 8
+                     ,fuel_type = "Petrol"
+                     ,preferred_fuel=None):
+        """ Initialise with info about our car """
+        self.tank_size = tank_size
+        self.mileage = mileage
+        self.fuel_type = fuel_type
+
+        if fuel_type not in ["Petrol","Diesel","LPG"]:
+            raise ValueError("Fuel type not recognised")
+
+    def calc_fuel_price(self,fuel_price,tank_frac=0.8):
+        return fuel_price * tank_frac
+
+    
+def Journey():
+    """
+    Contains information about start, stop, maximum acceptable detour.
+    """
+    def __init__(start_address : str
+                ,end_address : str
+                ,max_acceptable_detour : str):
+
+        self.start_address = start_address
+        self.end_address = end_address
+        self.max_acceptable_detour = max_acceptable_detour
+
+        self.start_coords = self.address_to_coords(self.start_address)
+        self.end_coords = self.address_to_coords(self.end_address)
+    
+    def address_to_coords(self, address):
+        """
+        USe geocoder.yahoo functionality (looks & seems free to use, no API key 
+        nonsense) in order to get coordinates.
+        """
+        address_coords = geocoder.arcgis(address).json
+
+        return address_coords
