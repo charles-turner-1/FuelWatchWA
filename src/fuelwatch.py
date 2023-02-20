@@ -12,6 +12,7 @@ import feedparser
 import pandas
 import geocoder
 import ast
+import collections
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -118,7 +119,6 @@ class CarInfo():
     def calc_fuel_price(self,fuel_price,tank_frac=0.8):
         return fuel_price * tank_frac
 
-    
 class Journey():
     """
     Contains information about start, stop, maximum acceptable detour.
@@ -216,7 +216,6 @@ class Journey():
 
         return detour_lengths
 
-        
     def get_all_detour_costs(self):
         """ First compute start-end distance. Then compute all the distances for
             every trip, stopping at one of the servo's that fuelwatch gives us 
@@ -240,20 +239,45 @@ class Journey():
             distance = self.request_distance(servo_coords) / 1000 # Distance in KM
 
             try:    
-                detour_cost = servo_price * (distance - base_dist) / car_mileage
+                detour_cost = servo_price * car_mileage * (distance - base_dist)
             except:
                 detour_cost = np.NaN
             detour_costs[servo_name] = detour_cost
 
+        detour_costs = dict(sorted(detour_costs.items(), key=lambda item: item[1]))
         return detour_costs
 
+    def get_all_detour_values(self, tank_frac):
+        """ First compute start-end distance. Then compute all the distances for
+            every trip, stopping at one of the servo's that fuelwatch gives us 
+            hits for. Then get all the detour lengths. Now multiply that by the 
+            price of fuel at that servo to figure out how much the detour costs
+        """
 
-journey = Journey(start_address="19 Battery Street, Brabham, Western Australia"
-                         ,end_address="5 Cressall Road, Balcatta, Western Australia"
-                         ,max_acceptable_detour=10)
+        fuel_type = self.fuel_type
+        n_litres = tank_frac *  self.tank_size
 
-car_info = CarInfo(fuel_type="Unleaded Petrol",mileage=7.5)
+        fuelwatch_results = FuelPrice(product=fuel_type).servo_list
 
-journey.get_car_info(car_info)
+        info_dict = {}
 
-sorted(journey.get_all_detour_costs())
+        base_dist = self.request_distance() / 1000 # Base distance in KM
+        for result in fuelwatch_results:
+            servo_coords = (result.get("longitude"),result.get("latitude"))
+            servo_name = f"{result.get('trading-name')}, {result.get('address')}"
+            servo_price = float(result.get("price")) / 100 # Price in Dollars
+            car_mileage = self.mileage / 100 # Mileage in litres/km
+            distance = self.request_distance(servo_coords) / 1000 # Distance in KM
+
+            try:    
+                detour_cost = servo_price * car_mileage * (distance - base_dist)
+                fuel_cost = servo_price * n_litres
+            except:
+                detour_cost = np.NaN
+
+            info_dict[servo_name] = (distance - base_dist, fuel_cost, detour_cost, fuel_cost + detour_cost)
+
+        info_dict = {key : val for key, val in info_dict.items() if val[0] < self.max_acceptable_detour}
+
+        info_dict = dict(sorted(info_dict.items(), key=lambda item: item[1][3]))
+        return info_dict
