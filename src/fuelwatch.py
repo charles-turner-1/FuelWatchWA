@@ -14,6 +14,8 @@ import geocoder
 import ast
 import collections
 
+from typing import Union
+
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def read_json(filename: str):
@@ -33,20 +35,20 @@ class FuelPrice():
        
         self.payload = {}
     
-        if brand is not None:
+        if brand:
             self.payload["Brand"] = self.brand[brand]
-        if product is not None:
+        if product:
             self.payload["Product"] = self.product[product]
             self.fuel_name = product
         else:
             self.fuel_name = "Unleaded Petrol"
         
-        if region is not None:
+        if region:
             self.payload["Region"] = self.region[region]
-        if suburb is not None:
+        if suburb:
             self.payload["Suburb"] = suburb
 
-        self.payload["Surrounding"] = "yes" if surrounding is True else "no"
+        self.payload["Surrounding"] = "yes" if surrounding else "no"
 
         self.request()
 
@@ -83,7 +85,8 @@ class FuelPrice():
         self.payload["Region"] = region 
 
     def set_product(self,product):
-        self.payload["Product"] = product
+        self.payload["Product"] = self.product[product]
+        self.fuel_name = product
 
     def set_surrounding(self,surrounding):
         self.payload["Surrounding"] = "yes" if surrounding is True else "no"
@@ -105,35 +108,54 @@ class CarInfo():
     This class contains info about your car / ute ie. mileage, tank size, fuel 
     type.
     """
-    def __init__(self,tank_size : float = 50
-                     ,mileage : float = 8
-                     ,fuel_type : str = "Petrol"):
+    def __init__(self,tank_size : Union[None,float] = 50
+                     ,mileage   : Union[None,float] = 8
+                     ,fuel_type : Union[None,str] = "Petrol"):
         """ Initialise with info about our car """
         self.tank_size = tank_size
         self.mileage = mileage
         self.fuel_type = fuel_type
 
-        # if fuel_type not in ["Petrol","Diesel","LPG"]:
-        #     raise ValueError("Fuel type not recognised")
-
     def calc_fuel_price(self,fuel_price,tank_frac=0.8):
         return fuel_price * tank_frac
+
+    def set_fuel_type(self,fuel_type : str) -> None:
+        """ Should probably start by asserting that our fuel type is acceptable.
+            """
+        self.fuel_type = fuel_type
+    
+    def set_mileage(self, mileage : float) -> None:
+        self.mileage = mileage
+
+    def set_tank_size(self, tank_size : float) -> None:
+        self.tank_size = tank_size
 
 class Journey():
     """
     Contains information about start, stop, maximum acceptable detour.
     """
     def __init__(self
-                ,start_address : str
-                ,end_address : str
-                ,max_acceptable_detour : float = 10):
+                ,start_address : str = None
+                ,end_address : str = None
+                ,max_acceptable_detour : Union[None,float] = None):
 
+        if start_address:   
+            self.add_start_address(start_address)
+        if end_address: 
+            self.add_end_address(end_address)  
+        if max_acceptable_detour:
+            self.set_max_detour(max_acceptable_detour)
+
+    def set_start_address(self, start_address : str = None) -> None:
         self.start_address = start_address
-        self.end_address = end_address
-        self.max_acceptable_detour = max_acceptable_detour
+        self.start_coords = self.address_to_coords(start_address)
 
-        self.start_coords = self.address_to_coords(self.start_address)
-        self.end_coords = self.address_to_coords(self.end_address)
+    def set_end_address(self, end_address : str = None) -> None:
+        self.end_address = end_address
+        self.end_coords = self.address_to_coords(end_address)
+
+    def set_max_detour(self,max_acceptable_detour : float) -> None:
+        self.max_acceptable_detour = max_acceptable_detour
     
     def address_to_coords(self, address):
         """
@@ -247,7 +269,7 @@ class Journey():
         detour_costs = dict(sorted(detour_costs.items(), key=lambda item: item[1]))
         return detour_costs
 
-    def get_all_detour_values(self, tank_frac):
+    def get_all_detour_values(self, num_litres):
         """ First compute start-end distance. Then compute all the distances for
             every trip, stopping at one of the servo's that fuelwatch gives us 
             hits for. Then get all the detour lengths. Now multiply that by the 
@@ -255,7 +277,6 @@ class Journey():
         """
 
         fuel_type = self.fuel_type
-        n_litres = tank_frac *  self.tank_size
 
         fuelwatch_results = FuelPrice(product=fuel_type).servo_list
 
@@ -271,7 +292,7 @@ class Journey():
 
             try:    
                 detour_cost = servo_price * car_mileage * (distance - base_dist)
-                fuel_cost = servo_price * n_litres
+                fuel_cost = servo_price * num_litres
             except:
                 detour_cost = np.NaN
 

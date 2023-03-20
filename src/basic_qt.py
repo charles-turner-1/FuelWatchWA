@@ -30,8 +30,6 @@ class Window(QWidget):
         self.region_label = QLabel(self)
         self.fuel_label.setText("Region")
 
-
-
  
         self.product_selector = QComboBox(self)
         self.product_selector.addItem("Any")
